@@ -80,7 +80,7 @@ Checks the current version dates and changes for a law or standard.
 - `version_date` : Current version date in your system 
 - `last_change` : Date of last change in your system
 - `summarize` : If true, the summary dataset is returned.
-- `summarize` : If false, the summary dataset is only returned for the latest fulltext. If true, the summary dataset is returned for the latest full text and the latest paragraphs, articles, etc.
+- `summarize_all` : If false, the summary dataset is only returned for the latest fulltext. If true, the summary dataset is returned for the latest full text and the latest paragraphs, articles, etc.
 - `customer_name` : Send the customer name if you would like to get results catered to this specific customer.
 - `customer_description` : Send the customer description to improve the summary results for the customer.
 - `return_standardtexts` : If true then the full text and the texts of the paragraphs, sections, etc. of the requested law or standard is returned.
