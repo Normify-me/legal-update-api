@@ -141,6 +141,7 @@ else
         "summary": "string",
         "recommendations": "List", 
         "legal_aspect": "string",
+        "relevanz": "string",
         "customer_name": "string",
         "customer_id": "id",
         "custom_fields": [dict{}],
