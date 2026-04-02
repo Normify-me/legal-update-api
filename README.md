@@ -62,7 +62,8 @@ Checks the current version dates and changes for a law or standard.
   "id": "int",
   "identifier": "string",
   "type": "string",
-  "short_title": "string", 
+  "short_title": "string",
+  "title": "string", 
   "version_date": "YYYY-MM-DD",
   "last_change": "YYYY-MM-DD",
   "summarize": "boolean",
@@ -76,8 +77,9 @@ Checks the current version dates and changes for a law or standard.
 
 **Parameters:**
 - `id` : Unique ID of the law or standard (required)
-- `identifier` : Unique identifier of the law or standard (required)
-- `short_title` : Title of the law or standard (not required but improves response quality) (required)
+- `identifier` : Unique identifier of the law or standard (greatly improves matching probability)
+- `short_title` : Short title of the law or standard (short_title or title is required)
+- `title` : Title of the law or standard (short_title or title is required)
 - `version_date` : Current version date in your system 
 - `last_change` : Date of last change in your system
 - `summarize` : If true, the summary dataset is returned.
