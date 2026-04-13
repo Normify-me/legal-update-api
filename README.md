@@ -125,12 +125,13 @@ else
     "current_version_date": "YYYY-MM-DD",
     "created_by_ai": "boolean",
     "retracted": "boolean",
+    "retraction_note": "string",
+    "retraction_date": "YYYY-MM-DD",
     "source": "string",
     "has_newer_version": "boolean",
     "changes": [
       {
         "change_note": "string",
-        "retraction_note": "string",
         "effective_date": "YYYY-MM-DD",
         "link": "string"
       }
@@ -189,9 +190,11 @@ else
 - `current_version_date`: Current version date (Publishing date/Version date)
 - `created_by_ai`: Indicator if the standard was created by AI in the database
 - `retracted`: Indicator if this law/standard was rectracted (not in effect anymore).
+- `retraction_note`: Retraction note
+- `retraction_date`: Date of retraction
 - `has_newer_version`: Boolean indicating whether a newer version than the provided date is available
 - `source`: Link to standard/law url
-- `changes`: Array of all changes. The fields here are the change_note, the retraction_note, the effective date and the link for that change.
+- `changes`: Array of all changes. The fields here are the change_note, the effective date and the link for that change.
 - `category`: Category of this law/standard
 - `summary`: List of dictionaries
 - `document_level_desc`: Description of document level (Full text, paragraph, section, etc.)
