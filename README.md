@@ -61,7 +61,6 @@ Checks the current version dates and changes for a law or standard.
 {
   "id": "int",
   "identifier": "string",
-  "type": "string",
   "short_title": "string",
   "title": "string", 
   "version_date": "YYYY-MM-DD",
