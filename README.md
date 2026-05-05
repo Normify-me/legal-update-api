@@ -61,6 +61,7 @@ Checks the current version dates and changes for a law or standard.
 {
   "id": "int",
   "identifier": "string",
+  "normify_identifier": "string",
   "short_title": "string",
   "title": "string", 
   "version_date": "YYYY-MM-DD",
@@ -77,6 +78,7 @@ Checks the current version dates and changes for a law or standard.
 **Parameters:**
 - `id` : Unique ID of the law or standard (required)
 - `identifier` : Unique identifier of the law or standard (greatly improves matching probability)
+- `normify_identifier` : Unique identifier at Normify.me (for example included in the url of a law/standard)
 - `short_title` : Short title of the law or standard (short_title or title is required)
 - `title` : Title of the law or standard (short_title or title is required)
 - `version_date` : Current version date in your system 
@@ -88,8 +90,11 @@ Checks the current version dates and changes for a law or standard.
 - `customer_description` : Send the customer description to improve the summary results for the customer.
 - `return_standardtexts` : If true then the full text and the texts of the paragraphs, sections, etc. of the requested law or standard is returned.
 
+If a normify_identifier is provided, the API returns the associated law/standard. If the normify_identifier is not a valid normify_identifier then "Standard not found" is returned regardless of other input parameters.
 
-One of version_date and last_change have to be submitted.
+If a normify_identifier is not provided, the API finds the law/standard via the identifier, short_title and title.
+
+If neither version_date nor last_change is submitte, they are set to 1970-01-01.
 If both the version_date and last_change are sent the new version date is compared to both dates and the has_newer_version boolean is set accordingly:
 
 ```
