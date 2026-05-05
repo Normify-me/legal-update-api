@@ -3,7 +3,7 @@
 
 <img width="200"  alt="pb_normify_white" src="https://github.com/user-attachments/assets/56a453c7-5417-4e73-bc45-857c1a6c9062" />
 
-# Normify Legal Update API Documentation
+# Normify Legal Update API
 
 ## Overview
 
