@@ -7,7 +7,7 @@
 
 ## Overview
 
-The Normify API allows you to check for updates of versions and changes for laws and standards. This API serves to update the version dates of standards and laws in your database.
+The Normify Legal Update API allows you to check for updates of versions and changes for laws and standards. This API serves to update the version dates of standards and laws in your database.
 
 ## Base URL
 
