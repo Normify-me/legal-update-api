@@ -51,7 +51,7 @@ This returns a JSON with a refresh token and an access token. Use the access tok
 
 ### Query Laws and Standards
 
-**POST** `https://app.normify.me/research/api/ultimate`
+**POST** `https://app.normify.me/research/api/ultimate/`
 
 Checks the current version dates and changes for a law or standard.
 
