@@ -12,7 +12,7 @@ The Normify Legal Update API allows you to check for updates of versions and cha
 ## Base URL
 
 ```
-https://app.normify.me/research/api/ultimate
+https://app.normify.me/research/api/ultimate/
 ```
 
 ## Headers
