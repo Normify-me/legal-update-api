@@ -145,6 +145,8 @@ else
         {
         "document_level_desc": "string",
         "document_level": "string",
+        "text_in_force_date": "string",
+        "text_published_at": "string"
         "summary": "string",
         "recommendations": "List", 
         "legal_aspect": "string",
@@ -169,8 +171,6 @@ else
         "document_level_description": "string"
         "version_date": "string",
         "comparison_url": "string",
-        "text_in_force_date": "string",
-        "text_published_at": "string"
         }
     ],
 }
