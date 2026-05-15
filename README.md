@@ -169,6 +169,8 @@ else
         "document_level_description": "string"
         "version_date": "string",
         "comparison_url": "string",
+        "text_in_force_date": "string",
+        "text_published_at": "string"
         }
     ],
 }
@@ -222,6 +224,8 @@ else
 - `document_level_number`: Document level number, which shows the order of the texts.
 - `version_date`: Version date of the text in YYYY-MM-DD format
 - `comparison_url`: If a previous version of this text is available, a comparison overview is shown at this url.
+- `text_in_force_date`: Last in force date of text (i.e. Kundmachung)
+- `text_published_at`: Last publication date of text (i.e. Veröffentlichung)
 
 ## Examples
 
