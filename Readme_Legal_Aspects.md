@@ -4,7 +4,6 @@ The `legal_aspect` field in summary responses may contain one of the following v
 
 | Value |
 |-------|
-| Kein Rechtlicher Aspekt |
 | Abfall |
 | Abwasser |
 | Anlagensicherheit |
@@ -56,3 +55,4 @@ The `legal_aspect` field in summary responses may contain one of the following v
 | Urheberrecht |
 | Exportkontrolle |
 | Sanktionen |
+| Kein Rechtlicher Aspekt |
