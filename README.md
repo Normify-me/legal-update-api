@@ -207,7 +207,7 @@ else
 - `document_level`: Document level (Full text, paragraph, section, etc.); i.e. 1 or A or IV, etc.
 - `summary`: Summary of the document
 - `recommendations`: List of dicts with recommendations. The dict is of the format {'customer': 'string', 'recommendation', : 'string'}
-- `legal_aspect`: Legal aspect
+- `legal_aspect`: Legal aspect. See [Legal Aspect Options](./Readme_Legal_Aspects.md).
 - `customer_name`: Customer name for which a request was done
 - `customer_id`: Customer database id for which the request was done
 - `custom_fields`: Please ask the admin for your custom fields.
