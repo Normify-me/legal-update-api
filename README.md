@@ -68,6 +68,7 @@ Checks the current version dates and changes for a law or standard.
   "last_change": "YYYY-MM-DD",
   "summarize": "boolean",
   "summarize_all": "boolean",
+  "queue_generate_summary": "boolean",
   "generate_standard_misc_info": "boolean",
   "queue_generate_standard_misc_info": "boolean",
   "customer_name": "string",
@@ -86,9 +87,9 @@ Checks the current version dates and changes for a law or standard.
 - `last_change` : Date of last change in your system
 - `summarize` : If true, the summary dataset is returned.
 - `summarize_all` : If false, the summary dataset is only returned for the latest fulltext. If true, the summary dataset is returned for the latest full text and the latest paragraphs, articles, etc.
+- `queue_generate_summary` : If true, summaries are generated for the standard in the next 24h (AI costs) if the summaries are not already present in the database. A job is created to generate this information and after 24h the request has to be sent again to receive the new data.
 - `generate_standard_misc_info` : If true, more info is generated for the standard on the fly (AI costs) if the information is not already present in the database. This increases the request time. If the request is too slow for you please use queue_generate_standard_misc_info instead.
 - `queue_generate_standard_misc_info` : If true, more info is generated for the standard in the next 24h (AI costs) if the information is not already present in the database. A job is created to generate this information and after 24h the request has to be sent again to receive the new data.
-- `queue_generate_summary` : If true, summaries are generated for the standard in the next 24h (AI costs) if the summaries are not already present in the database. A job is created to generate this information and after 24h the request has to be sent again to receive the new data.
 - `customer_name` : Send the customer name if you would like to get results catered to this specific customer.
 - `customer_description` : Send the customer description to improve the summary results for the customer.
 - `return_standardtexts` : If true then the full text and the texts of the paragraphs, sections, etc. of the requested law or standard is returned.
