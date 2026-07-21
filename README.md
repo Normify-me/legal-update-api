@@ -66,6 +66,7 @@ Checks the current version dates and changes for a law or standard.
   "title": "string", 
   "version_date": "YYYY-MM-DD",
   "last_change": "YYYY-MM-DD",
+  "return_future_changes": "boolean",
   "summarize": "boolean",
   "summarize_all": "boolean",
   "queue_generate_summary": "boolean",
@@ -85,6 +86,7 @@ Checks the current version dates and changes for a law or standard.
 - `title` : Title of the law or standard (short_title or title is required)
 - `version_date` : Current version date in your system 
 - `last_change` : Date of last change in your system
+- `return_future_changes` : If this is true, then also changes in the future are returned in the changes list. If it is false only changes in the past until today are returned. Default is false.
 - `summarize` : If true, the summary dataset is returned.
 - `summarize_all` : If false, the summary dataset is only returned for the latest fulltext. If true, the summary dataset is returned for the latest full text and the latest paragraphs, articles, etc.
 - `queue_generate_summary` : If true, summaries are generated for the standard in the next 24h (AI costs) if the summaries are not already present in the database. A job is created to generate this information and after 24h the request has to be sent again to receive the new data.
