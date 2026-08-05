@@ -178,6 +178,17 @@ else
         "comparison_url": "string",
         }
     ],
+    "text_changes": [
+      {
+      "document_level_description": "string",
+      "document_level": "string",
+      "version_date": "YYYY-MM-DD",
+      "previous_version_date": "YYYY-MM-DD",
+      "change_description": "text",
+      "unchanged": boolean,
+      "created_by_ai": boolean
+      }
+     ],
 }
 ```
 
@@ -230,7 +241,15 @@ else
 - `comparison_url`: If a previous version of this text is available, a comparison overview is shown at this url.
 - `text_in_force_date`: Last in force date of text (i.e. Kundmachung)
 - `text_published_at`: Last publication date of text (i.e. Veröffentlichung)
-
+- text_changes: List of dictionaries
+- `document_level_description`: Description of document level (Full text, paragraph, section, etc.)
+- `document_level`: Document level (Full text, paragraph, section, etc.); i.e. 1 or A or IV, etc.
+- `version_date`: Version date of the text in YYYY-MM-DD format
+- `previous_version_date`: Version date of the text in YYYY-MM-DD format that the text was compared to
+- `change_description`: Verbose description of the changes of the text between the two versions
+- `unchanged`: True if the text was not changed
+- `created_by_ai`: True if change analysis was done by AI
+  
 ## Examples
 
 Further examples can be found in the [Example folder](./Examples/).
