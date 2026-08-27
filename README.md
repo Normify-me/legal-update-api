@@ -130,6 +130,8 @@ else
     "region_identifier": "string",
     "normify_identifier": "string",
     "normify_link": "string",
+    "pdf_link_normify": "string",
+    "pdf_link_external": "string",
     "short_title": "string",
     "title": "string",
     "current_version_date": "YYYY-MM-DD",
@@ -207,6 +209,8 @@ else
 - `region_identifier`: Region identifier where this law/standard is applicable,
 - `normify_identifier`: Unique normify identifier of the law/standard,
 - `normify_link`: Link to the law/standard on Normify,
+- `pdf_link_normify`: Link to the pdf document on Normify,
+- `pdf_link_external`: Link to the pdf document on the original source website
 - `short_title`: Short title of the law/standard
 - `title`: Title of the law/standard
 - `current_version_date`: Current version date (Publishing date/Version date)
