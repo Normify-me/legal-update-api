@@ -195,7 +195,7 @@ else
 ```
 
 **Response Fields:**
-- `standard_found`: Indicates if the requested standard was found in the Nomrify database
+- `standard_found`: Indicates if the requested standard was found in the Normify database
 - `matched_by_similarity`: Indicator if the standard was found in the database but the identifier did not match 100% and the match was done by a similarity analysis (please check this result manually if the match was correct)
 - `similarity_score`: Float between 0 and 1 that shows the similarity between the name_short of the request and the name/name_short in the database when the standard is matched via similarity matching. A value of 1 indicates perfect similarity.
 - `id`: Unique ID of the law/standard
