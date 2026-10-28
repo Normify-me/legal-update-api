@@ -5,6 +5,8 @@
 
 # Normify Legal Update API
 
+[OpenAPI Implementation](./legal-update-api.openapi.yaml)
+
 ## Overview
 
 The Normify Legal Update API allows you to check for updates of versions and changes for laws and standards. This API serves to update the version dates of standards and laws in your database. It also allows you to retrieve full texts and requirements for individual sections or submit new AI queries.
@@ -78,9 +80,29 @@ Checks the current version dates and changes for a law or standard.
 }
 ```
 
+Laws can be queried in two ways via the API.
+
+1. The most reliable way is the query via the normify_identifier. This is a unique id in our database that can be used to query exactly this law. The normify_identifier can be found in the url of the law at app.normify.me (i.e.: https://app.normify.me/research/standards/detail/29QPR2mXiYtoSmMVUfV5Co/ --> normify_identifier: 29QPR2mXiYtoSmMVUfV5Co)
+
+If a normify_identifier is provided, the API returns the associated law/standard. If the normify_identifier is not a valid normify_identifier then "Standard not found" is returned regardless of other input parameters.
+
+2. If a normify_identifier is not provided, the API finds the law/standard via the identifier (German: Kürzel (i.e. AltholzV)), short_title (i.e. Altzholzverordnung) and title (i.e. Verordnung über Anforderungen an die Verwertung und Beseitigung von Altholz).
+
+In order to update the law or standard in your database you may submit a version_date or the date of last_change. The API then returns has_newer_version = True if a newer version exists in our database.
+
+If neither version_date nor last_change is submitted, they are set to 1970-01-01.
+If both the version_date and last_change are sent the new version date is compared to both dates and the has_newer_version boolean is set accordingly:
+
+```
+if current_version_date > last_change OR current_version_date > version_date
+  has_newer_version = True
+else
+  has_newer_version = False
+```
+
 **Parameters:**
-- `id` : Unique ID of the law or standard (required)
-- `identifier` : Unique identifier of the law or standard (greatly improves matching probability)
+- `id` : Unique ID of the law or standard in your database (required only if normify_identifier is omitted - number of string and is echoed back as string)
+- `identifier` : Unique general identifier (German: Kürzel) of the law or standard (greatly improves matching probability)
 - `normify_identifier` : Unique identifier at Normify.me (for example included in the url of a law/standard)
 - `short_title` : Short title of the law or standard (short_title or title is required)
 - `title` : Title of the law or standard (short_title or title is required)
@@ -95,20 +117,6 @@ Checks the current version dates and changes for a law or standard.
 - `customer_name` : Send the customer name if you would like to get results catered to this specific customer.
 - `customer_description` : Send the customer description to improve the summary results for the customer.
 - `return_standardtexts` : If true then the full text and the texts of the paragraphs, sections, etc. of the requested law or standard is returned.
-
-If a normify_identifier is provided, the API returns the associated law/standard. If the normify_identifier is not a valid normify_identifier then "Standard not found" is returned regardless of other input parameters.
-
-If a normify_identifier is not provided, the API finds the law/standard via the identifier, short_title and title.
-
-If neither version_date nor last_change is submitte, they are set to 1970-01-01.
-If both the version_date and last_change are sent the new version date is compared to both dates and the has_newer_version boolean is set accordingly:
-
-```
-if current_version_date > last_change OR current_version_date > version_date
-  has_newer_version = True
-else
-  has_newer_version = False
-```
 
 #### Response
 
@@ -146,15 +154,16 @@ else
         "change_note": "string",
         "effective_date": "YYYY-MM-DD",
         "link": "string"
+        "created_by_ai": "boolean"
       }
     ],
     "summary": [
         {
-        "document_level_desc": "string",
+        "document_level_description": "string",
         "document_level": "string",
         "text_in_force_date": "string",
         "text_published_at": "string"
-        "summary": "string",
+        "document_summary": "string",
         "recommendations": "List", 
         "legal_aspect": "string",
         "relevanz": "string",
@@ -278,8 +287,10 @@ Further examples can be found in the [Example folder](./Examples/).
 
 - `200 OK`: Request successful
 - `400 Bad Request`: Invalid request (missing parameters, invalid date format)
-- `401 Unauthorized`: Invalid or missing API key
+- `401 Unauthorized`: Invalid or missing token with {'detail': '...'}
 - `404 Not Found`: Law or standard not found
+- `403`: Logged in but no API access
+- 
 - `500 Internal Server Error`: Server error
 
 ### Error Response Format
