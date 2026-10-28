@@ -10,9 +10,9 @@
 The Normify Legal Update API allows you to check for updates of versions and changes for laws and standards. This API serves to update the version dates of standards and laws in your database. It also allows you to retrieve full texts and requirements for individual sections or submit new AI queries.
 
 ## Standardised Implementations
-<img width="100" alt="grafik" src="https://github.com/user-attachments/assets/3ce81eef-52a6-4640-b5a1-74ac61c7630b" />  [OpenAPI Implementation](./legal-update-api.openapi.yaml)
+<img height="25" alt="OpenAPI Logo" src="https://github.com/user-attachments/assets/44fc57cd-9497-4812-8777-72d359334204" /> [OpenAPI Implementation](./legal-update-api.openapi.yaml)
 
-<img width="100" alt="grafik" src="https://github.com/user-attachments/assets/9eeaf082-951e-4694-b254-8985eb8a2a0a" />  Coming soon
+<img height="25" alt="Swagger Logo" src="https://github.com/user-attachments/assets/3f6b28f9-bb75-49d7-ae5b-9d6e7c23ee7d" /> Swagger Implementation - Coming soon
 
 ## Base URL
 
