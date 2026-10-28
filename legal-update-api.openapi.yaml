@@ -1,0 +1,938 @@
+openapi: 3.0.3
+info:
+  title: Normify Legal Update API
+  version: "1.0.0"
+  description: |
+    The Normify Legal Update API checks version dates and changes for laws and
+    standards. Use it to update version dates in your own database, and to
+    retrieve full texts, text changes, and summaries for individual sections.
+
+    ## Authentication
+
+    Send `POST /api/token/` with the account email and password. The response
+    contains a refresh token and an access token. Send the access token on
+    every Legal Update request:
+
+    ```
+    Authorization: Bearer <access_token>
+    ```
+
+    The access token is valid for 30 days. The refresh token is valid for 7
+    days. Fetch a new access token when you start a new integration run, or
+    exchange the refresh token at `POST /api/token/refresh/`.
+
+    The account must be allowed to call the API. A valid login without that
+    permission returns HTTP 403.
+
+    ## Finding a law or standard
+
+    * If `normify_identifier` is set, that identifier is used on its own. An
+      unknown value returns `standard_found: false` and does not fall back to
+      the other fields.
+    * Otherwise `id` is required, and at least one of `short_title` or `title`
+      is required. `identifier` is optional and improves the match.
+    * If neither `version_date` nor `last_change` is sent, both are treated as
+      `1970-01-01`.
+
+    `has_newer_version` is true when the database has a change whose version
+    date is on or after the first day of the month after the later of
+    `version_date` and `last_change`, and on or before today.
+
+    ## Optional payloads
+
+    `summary` is included only when `summarize` is true and a summary exists.
+    With `summarize_all` false, only the latest full text is summarized. With
+    `summarize_all` true, the latest full text and the latest paragraphs,
+    articles, and similar sections are included.
+
+    `standardtexts` is included only when `return_standardtexts` is true.
+
+    `text_changes` is included when `summarize` is true. The same
+    `summarize_all` flag limits those changes to the full text or includes
+    lower document levels.
+
+    `generate_standard_misc_info` creates missing background information during
+    the request (AI cost, slower response). `queue_generate_summary` and
+    `queue_generate_standard_misc_info` enqueue that work for the next 24
+    hours; send the request again afterwards to read the result.
+
+  contact:
+    name: Normify
+    url: https://app.normify.me
+
+servers:
+  - url: https://app.normify.me
+    description: Production
+
+tags:
+  - name: Authentication
+    description: Obtain and refresh the bearer token.
+  - name: Legal updates
+    description: Look up the current version, changes, texts, and summaries of a law or standard.
+
+paths:
+  /api/token/:
+    post:
+      tags: [Authentication]
+      operationId: obtainToken
+      security: []
+      summary: Obtain an access token
+      description: |
+        Exchange the account email and password for a JWT access token and a
+        refresh token. Use the access token as the bearer token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenRequest"
+            example:
+              email: you@example.com
+              password: your-password
+      responses:
+        "200":
+          description: Tokens issued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenPair"
+              example:
+                access: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.access
+                refresh: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh
+        "401":
+          description: Email or password was rejected.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DetailError"
+              example:
+                detail: No active account found with the given credentials
+
+  /api/token/refresh/:
+    post:
+      tags: [Authentication]
+      operationId: refreshToken
+      security: []
+      summary: Refresh an access token
+      description: Exchange a valid refresh token for a new access token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+            example:
+              refresh: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh
+      responses:
+        "200":
+          description: New access token issued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessToken"
+              example:
+                access: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.access
+        "401":
+          description: Refresh token is missing, expired, or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DetailError"
+
+  /research/api/ultimate/:
+    post:
+      tags: [Legal updates]
+      operationId: checkStandardVersion
+      summary: Query a law or standard
+      description: |
+        Returns the current version date, change list, and optional summaries,
+        full texts, and text-change descriptions for one law or standard.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LegalUpdateRequest"
+            examples:
+              byIdentifier:
+                summary: Match by external id, identifier, and short title
+                value:
+                  id: 1001
+                  identifier: DIN_EN_ISO_9001_2015
+                  short_title: DIN EN ISO 9001
+                  version_date: "2023-01-15"
+              byNormifyIdentifier:
+                summary: Match by Normify identifier and return texts
+                value:
+                  normify_identifier: din-en-iso-9001-2015-11
+                  version_date: "2023-01-15"
+                  last_change: "2022-06-01"
+                  return_future_changes: false
+                  summarize: true
+                  summarize_all: false
+                  return_standardtexts: true
+      responses:
+        "200":
+          description: |
+            The call was processed. Inspect `standard_found`. An unknown law or
+            standard is still HTTP 200, with `standard_found: false` and
+            `error.code` `STANDARD_NOT_FOUND`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalUpdateResponse"
+              examples:
+                found:
+                  summary: Standard found
+                  value:
+                    success: true
+                    standard_found: true
+                    matched_by_similarity: false
+                    similarity_score: null
+                    data:
+                      id: "1001"
+                      identifier: DIN_EN_ISO_9001_2015
+                      normify_identifier: din-en-iso-9001-2015-11
+                      normify_link: https://app.normify.me/research/standard/din-en-iso-9001-2015-11/
+                      title: Qualitätsmanagementsysteme - Anforderungen
+                      short_title: DIN EN ISO 9001
+                      current_version_date: "2015-11-01"
+                      retracted: false
+                      retraction_date: null
+                      retraction_note: null
+                      created_by_ai: false
+                      source: null
+                      has_newer_version: false
+                      changes:
+                        - change_note: Ausgabe 2015-11
+                          effective_date: "2015-11-01"
+                          link: https://example.com/din-en-iso-9001
+                          created_by_ai: false
+                      legal_type: Norm
+                      legal_topic: Qualitätsmanagement
+                      relationships: null
+                      application_description: Anforderungen an ein Qualitätsmanagementsystem.
+                      recommendation_misc: null
+                      in_force_date: "2015-11-01"
+                      region_identifier: DE
+                      pdf_link_normify: null
+                      pdf_link_external: null
+                      total_number_of_changes: 1
+                notFound:
+                  summary: Unknown normify_identifier
+                  value:
+                    success: true
+                    standard_found: false
+                    matched_by_similarity: false
+                    similarity_score: null
+                    data: {}
+                    error:
+                      code: STANDARD_NOT_FOUND
+                      message: Standard wurde nicht gefunden
+                      details:
+                        exception: API Aufruf war erfolgreich, aber Standard wurde nicht gefunden
+        "400":
+          description: |
+            The request is invalid. Typical codes are `MISSING_PARAMETERS`,
+            `INVALID_DATE_FORMAT`, `MULTIPLE_STANDARDS`, and
+            `MULTIPLE_API_MAPPINGS`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingParameters:
+                  summary: id or a title is missing
+                  value:
+                    success: false
+                    error:
+                      code: MISSING_PARAMETERS
+                      message: The short_title or title is required
+                      details: {}
+                invalidDate:
+                  summary: Date is not YYYY-MM-DD
+                  value:
+                    success: false
+                    error:
+                      code: INVALID_DATE_FORMAT
+                      message: Invalid version_date format. Use YYYY-MM-DD
+                      details: {}
+        "401":
+          description: The bearer token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DetailError"
+              example:
+                detail: Authentication credentials were not provided.
+        "403":
+          description: The account is authenticated but is not allowed to call this API.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DetailError"
+              example:
+                detail: You do not have permission to perform this action.
+        "405":
+          description: Only POST is accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error:
+                  code: METHOD_NOT_ALLOWED
+                  message: GET method not allowed. Use POST with JSON body.
+                  details: {}
+        "500":
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error:
+                  code: INTERNAL_SERVER_ERROR
+                  message: Internal server error
+                  details:
+                    exception: error detail
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Access token from `POST /api/token/` or `POST /api/token/refresh/`.
+
+  schemas:
+    TokenRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          description: Account email address.
+        password:
+          type: string
+          format: password
+          description: Account password.
+
+    TokenPair:
+      type: object
+      required: [access, refresh]
+      properties:
+        access:
+          type: string
+          description: Bearer token. Valid for 30 days.
+        refresh:
+          type: string
+          description: Token used to obtain a new access token. Valid for 7 days.
+
+    RefreshRequest:
+      type: object
+      additionalProperties: false
+      required: [refresh]
+      properties:
+        refresh:
+          type: string
+          description: Refresh token from `POST /api/token/`.
+
+    AccessToken:
+      type: object
+      required: [access]
+      properties:
+        access:
+          type: string
+          description: New bearer token. Valid for 30 days.
+
+    DetailError:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+        code:
+          type: string
+          description: Present for some token failures, for example `token_not_valid`.
+        messages:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    LegalUpdateRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          description: |
+            Your identifier for this law or standard. Required when
+            `normify_identifier` is omitted. A number or a string is accepted.
+            The value is echoed back as a string in `data.id`.
+          oneOf:
+            - type: integer
+              example: 1001
+            - type: string
+              example: "1001"
+        identifier:
+          type: string
+          description: |
+            Identifier of the law or standard in your system, for example
+            `DIN_EN_ISO_9001_2015`. Greatly improves matching. Not required.
+          example: DIN_EN_ISO_9001_2015
+        normify_identifier:
+          type: string
+          description: |
+            Normify identifier, as used in the Normify URL of the law or
+            standard. When this is set, it is the only lookup key.
+          example: din-en-iso-9001-2015-11
+        short_title:
+          type: string
+          description: |
+            Short title. Required together with `id` when `normify_identifier`
+            is omitted, unless `title` is sent.
+          example: DIN EN ISO 9001
+        title:
+          type: string
+          description: |
+            Full title. Required together with `id` when `normify_identifier`
+            is omitted, unless `short_title` is sent.
+        version_date:
+          type: string
+          format: date
+          description: |
+            Version date currently stored in your system (`YYYY-MM-DD`).
+            Omitted dates are treated as `1970-01-01`.
+          example: "2023-01-15"
+        last_change:
+          type: string
+          format: date
+          description: |
+            Date of the last change stored in your system (`YYYY-MM-DD`).
+            Omitted dates are treated as `1970-01-01`.
+          example: "2022-06-01"
+        return_future_changes:
+          type: boolean
+          default: false
+          description: |
+            When true, `changes` also includes changes dated after today.
+            When false, only changes up to today are returned.
+        summarize:
+          type: boolean
+          default: false
+          description: |
+            When true, `summary` and `text_changes` are added when that data
+            exists.
+        summarize_all:
+          type: boolean
+          default: false
+          description: |
+            When false, summaries and text changes cover only the latest full
+            text. When true, they also cover the latest paragraphs, articles,
+            and similar sections.
+        queue_generate_summary:
+          type: boolean
+          default: false
+          description: |
+            When true, missing summaries are generated within about 24 hours
+            (AI cost). Send the request again after that to read them. Has
+            effect together with `summarize`.
+        generate_standard_misc_info:
+          type: boolean
+          default: false
+          description: |
+            When true, missing background information (`legal_type`,
+            `legal_topic`, `relationships`, `application_description`, and
+            related fields) is generated during this request (AI cost). This
+            makes the request slower. Prefer
+            `queue_generate_standard_misc_info` when latency matters.
+        queue_generate_standard_misc_info:
+          type: boolean
+          default: false
+          description: |
+            When true, missing background information is generated within
+            about 24 hours (AI cost). Send the request again after that to
+            read it.
+        customer_name:
+          type: string
+          description: |
+            Customer name. Sent when summaries should be tailored to that
+            customer.
+        customer_description:
+          type: string
+          description: Description of the customer, used to improve summary results.
+        return_standardtexts:
+          type: boolean
+          default: false
+          description: |
+            When true, `standardtexts` contains the full text and the texts of
+            paragraphs, sections, and similar parts.
+
+    LegalUpdateResponse:
+      type: object
+      required: [success, standard_found, matched_by_similarity, similarity_score, data]
+      properties:
+        success:
+          type: boolean
+          description: |
+            True when the request was processed, including when the law or
+            standard was not found. False is reserved for the error responses.
+        standard_found:
+          type: boolean
+          description: True when the law or standard exists in Normify.
+        matched_by_similarity:
+          type: boolean
+          description: |
+            True when the identifier was not an exact match and the law or
+            standard was chosen by similarity. Check that result manually.
+        similarity_score:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0
+          maximum: 1
+          description: |
+            Similarity between the requested short title and the stored name,
+            from 0 to 1. `1` is a perfect match. Null when similarity matching
+            was not used.
+        data:
+          $ref: "#/components/schemas/LegalUpdateData"
+        error:
+          $ref: "#/components/schemas/ErrorBody"
+          description: |
+            Present when the call was processed but the law or standard was
+            not found, or when part of the response could not be generated.
+            `code` is `STANDARD_NOT_FOUND` or `INTERNAL_SERVER_ERROR`.
+
+    LegalUpdateData:
+      type: object
+      description: |
+        Empty object when `normify_identifier` was sent and nothing matched.
+        Otherwise the fields below are present. `summary`, `standardtexts`,
+        and `text_changes` are added only for the corresponding request flags.
+      properties:
+        id:
+          type: string
+          nullable: true
+          description: The `id` submitted in the request, as a string.
+        identifier:
+          type: string
+          nullable: true
+          description: Identifier of the law or standard.
+        normify_identifier:
+          type: string
+          nullable: true
+          description: Unique Normify identifier.
+        normify_link:
+          type: string
+          format: uri
+          nullable: true
+          description: Link to the law or standard on Normify.
+        title:
+          type: string
+          nullable: true
+          description: Title of the law or standard.
+        short_title:
+          type: string
+          nullable: true
+          description: Short title of the law or standard.
+        current_version_date:
+          type: string
+          format: date
+          nullable: true
+          description: Current version date (publication or version date).
+        retracted:
+          type: boolean
+          nullable: true
+          description: True when the law or standard is no longer in effect.
+        retraction_date:
+          type: string
+          format: date
+          nullable: true
+          description: Date of retraction.
+        retraction_note:
+          type: string
+          nullable: true
+          description: Retraction note.
+        created_by_ai:
+          type: boolean
+          nullable: true
+          description: True when the database record was created by AI.
+        source:
+          type: string
+          nullable: true
+          description: |
+            Link to the law or standard. Set when `has_newer_version` is true.
+        has_newer_version:
+          type: boolean
+          nullable: true
+          description: |
+            True when a version newer than the submitted dates is available.
+            Compared against the later of `version_date` and `last_change`:
+            a stored change counts when its date is on or after the first day
+            of the following month and on or before today.
+        changes:
+          type: array
+          nullable: true
+          description: Changes of the law or standard, newest first.
+          items:
+            $ref: "#/components/schemas/Change"
+        legal_type:
+          type: string
+          nullable: true
+          description: |
+            Type of the law or standard, for example Abkommen, Norm, or
+            Richtlinie.
+        legal_topic:
+          type: string
+          nullable: true
+          description: |
+            Topic category, for example Abfall or Gefahrenabwehr.
+        relationships:
+          type: string
+          nullable: true
+          description: Relationships to other laws and standards.
+        application_description:
+          type: string
+          nullable: true
+          description: How this law or standard is applied.
+        recommendation_misc:
+          type: string
+          nullable: true
+          description: Additional recommendation text stored with the background information.
+        in_force_date:
+          type: string
+          format: date
+          nullable: true
+          description: Latest in-force date of the law or standard.
+        region_identifier:
+          type: string
+          nullable: true
+          description: Region where this law or standard applies.
+        pdf_link_normify:
+          type: string
+          format: uri
+          nullable: true
+          description: Link to the PDF on Normify.
+        pdf_link_external:
+          type: string
+          format: uri
+          nullable: true
+          description: Link to the PDF on the original source site.
+        total_number_of_changes:
+          type: integer
+          nullable: true
+          description: Number of changes included in `changes`.
+        summary:
+          type: array
+          description: |
+            Present when `summarize` is true and at least one summary was
+            returned.
+          items:
+            $ref: "#/components/schemas/Summary"
+        standardtexts:
+          type: array
+          description: Present when `return_standardtexts` is true and a standard was found.
+          items:
+            $ref: "#/components/schemas/StandardText"
+        text_changes:
+          type: array
+          description: |
+            Present when `summarize` is true. Entries describe changes between
+            two versions of the same text.
+          items:
+            $ref: "#/components/schemas/TextChange"
+
+    Change:
+      type: object
+      properties:
+        change_note:
+          type: string
+          nullable: true
+          description: Note describing the change.
+        effective_date:
+          type: string
+          format: date
+          nullable: true
+          description: Version or effective date of the change.
+        link:
+          type: string
+          nullable: true
+          description: Link for this change.
+        created_by_ai:
+          type: boolean
+          description: True when this change record was created by AI.
+
+    Summary:
+      type: object
+      properties:
+        document_level_description:
+          type: string
+          nullable: true
+          description: |
+            Document level description, for example Full text, Paragraph, or
+            Section.
+        document_level:
+          type: string
+          nullable: true
+          description: |
+            Document level label, for example `1`, `A`, or `IV`.
+        document_summary:
+          type: string
+          nullable: true
+          description: Summary of this document level.
+        recommendations:
+          type: array
+          description: Recommendations attached to this summary.
+          items:
+            $ref: "#/components/schemas/Recommendation"
+        legal_aspect:
+          type: string
+          nullable: true
+          description: |
+            Legal aspect of the text. Known values include Abfall, Abwasser,
+            Anlagensicherheit, Arbeitsrecht, Arbeitsschutz,
+            Arbeitsschutzmanagement, Bau, Bedarfsgegenstände, Bergbau,
+            Biologische Arbeitsstoffe, Bodenschutz, Chemikalien, Energie,
+            Energieabgaben, Energiemanagement, Gefahrenabwehr, Gefahrgut,
+            Gefahrstoffe, Gewässerschutz, Hygiene, Immissionsschutz,
+            Lebensmittel, Management, Naturschutz, Produktsicherheit,
+            Qualitätsmanagement, Sonstige, Sozialrecht, Störfall,
+            Strahlenschutz, Umwelthaftung, Umweltinformation,
+            Umweltmanagement, Umweltstatistik, Umweltstrafrecht, Wasser,
+            Wasserversorgung, Finanzwesen, Steuerrecht, Datenschutz,
+            IT-Sicherheit, Vergaberecht, Gesellschaftsrecht,
+            Corporate Governance, Vertragsrecht, Wettbewerbsrecht,
+            Kartellrecht, Gewerblicher Rechtsschutz (IP), Urheberrecht,
+            Exportkontrolle, Sanktionen, Verkehr, and Kein Rechtlicher Aspekt.
+        relevanz:
+          type: string
+          nullable: true
+          description: |
+            Relevance classification. Known values are obligatorisch,
+            divergent, temporär, sanktionierend, relativ, fakultativ,
+            subsidiär, informativ, and legitim.
+        customer_name:
+          type: string
+          nullable: true
+          description: Customer name this summary was requested for.
+        customer_id:
+          type: integer
+          nullable: true
+          description: Database id of that customer.
+        custom_fields:
+          $ref: "#/components/schemas/CustomFields"
+        text_in_force_date:
+          type: string
+          format: date
+          nullable: true
+          description: In-force date of this text (Inkrafttreten / Kundmachung).
+        text_published_at:
+          type: string
+          format: date
+          nullable: true
+          description: Publication date of this text (Veröffentlichung).
+
+    Recommendation:
+      type: object
+      properties:
+        customer:
+          type: string
+          nullable: true
+          description: Customer name. Null for the general recommendation.
+        recommendation:
+          type: string
+          nullable: true
+          description: Recommendation text.
+
+    CustomFields:
+      type: object
+      description: |
+        Extra summary fields. The keys below are always set when a summary is
+        returned. Further keys may be added for a specific account.
+      properties:
+        referenz:
+          type: string
+          description: |
+            Reference label. `∑` for the full text, otherwise the paragraph
+            or document level.
+        zustand_und_taetigkeit:
+          type: string
+        letzte_aenderung:
+          type: string
+        letzte_aenderung_date:
+          type: string
+          description: Date string, or an empty string when unknown.
+        pflicht:
+          type: string
+        anforderung:
+          type: string
+        bezug:
+          type: string
+        aktualisierung:
+          type: string
+          nullable: true
+          description: Year and quarter derived from the last-change date.
+        workflow:
+          type: string
+          description: "`N` for a first version, `Ä` when more than one change exists, `-` when retracted."
+        kurzbeschreibung:
+          type: string
+          description: Short description. `Zusammenfassung` for the full text.
+      additionalProperties: true
+
+    StandardText:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Database id of this text.
+        text_orig_language:
+          type: string
+          nullable: true
+          description: |
+            Language of the original text when it is neither German nor
+            English, for example AR or PT.
+        text_orig:
+          type: string
+          nullable: true
+          description: Original text when it is neither German nor English.
+        text_orig_markdown:
+          type: string
+          nullable: true
+          description: Original text as Markdown.
+        text_de:
+          type: string
+          nullable: true
+          description: German text.
+        text_de_markdown:
+          type: string
+          nullable: true
+          description: German text as Markdown.
+        text_en:
+          type: string
+          nullable: true
+          description: English text.
+        text_en_markdown:
+          type: string
+          nullable: true
+          description: English text as Markdown.
+        title_orig:
+          type: string
+          nullable: true
+          description: Title in the original language.
+        title_de:
+          type: string
+          nullable: true
+          description: German title.
+        title_en:
+          type: string
+          nullable: true
+          description: English title.
+        document_level:
+          type: string
+          nullable: true
+          description: Document level label, for example `1`, `A`, or `IV`.
+        document_level_number:
+          type: integer
+          nullable: true
+          description: Sort order of this text within the law or standard.
+        document_level_description:
+          type: string
+          nullable: true
+          description: |
+            Document level description, for example Full text, Paragraph, or
+            Section.
+        version_date:
+          type: string
+          format: date
+          nullable: true
+          description: Version date of this text.
+        comparison_url:
+          type: string
+          format: uri
+          description: |
+            Present when an earlier version of the same text exists. Opens a
+            comparison of the two versions.
+
+    TextChange:
+      type: object
+      properties:
+        document_level_description:
+          type: string
+          nullable: true
+          description: Document level description of the newer text.
+        document_level:
+          type: string
+          nullable: true
+          description: Document level label of the newer text.
+        version_date:
+          type: string
+          format: date
+          nullable: true
+          description: Version date of the newer text.
+        previous_version_date:
+          type: string
+          format: date
+          nullable: true
+          description: Version date of the text this version was compared with.
+        change_description:
+          type: string
+          nullable: true
+          description: Description of what changed between the two versions.
+        unchanged:
+          type: boolean
+          description: True when the text did not change.
+        created_by_ai:
+          type: boolean
+          description: True when the change analysis was produced by AI.
+
+    ErrorBody:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: |
+            Machine-readable code. Observed values:
+
+            * `MISSING_PARAMETERS` — `id` is missing, or both `short_title` and `title` are missing, and `normify_identifier` was not sent.
+            * `INVALID_DATE_FORMAT` — `version_date` or `last_change` is not `YYYY-MM-DD`.
+            * `MULTIPLE_STANDARDS` — more than one law or standard matched.
+            * `MULTIPLE_API_MAPPINGS` — more than one stored mapping matched this `id` for the account.
+            * `STANDARD_NOT_FOUND` — nothing matched. Returned with HTTP 200.
+            * `INTERNAL_SERVER_ERROR` — generation of part of the payload failed, or an unexpected error occurred.
+            * `METHOD_NOT_ALLOWED` — the request was not POST.
+          enum:
+            - MISSING_PARAMETERS
+            - INVALID_DATE_FORMAT
+            - MULTIPLE_STANDARDS
+            - MULTIPLE_API_MAPPINGS
+            - STANDARD_NOT_FOUND
+            - INTERNAL_SERVER_ERROR
+            - METHOD_NOT_ALLOWED
+        message:
+          type: string
+          description: Human-readable explanation. Some messages are German.
+        details:
+          type: object
+          additionalProperties: true
+          description: Extra context. Often an empty object.
+
+    ErrorResponse:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          $ref: "#/components/schemas/ErrorBody"
