@@ -5,11 +5,14 @@
 
 # Normify Legal Update API
 
-[OpenAPI Implementation](./legal-update-api.openapi.yaml)
-
 ## Overview
 
 The Normify Legal Update API allows you to check for updates of versions and changes for laws and standards. This API serves to update the version dates of standards and laws in your database. It also allows you to retrieve full texts and requirements for individual sections or submit new AI queries.
+
+## Standardised Implementations
+<img width="100" alt="grafik" src="https://github.com/user-attachments/assets/3ce81eef-52a6-4640-b5a1-74ac61c7630b" />  [OpenAPI Implementation](./legal-update-api.openapi.yaml)
+
+<img width="100" alt="grafik" src="https://github.com/user-attachments/assets/9eeaf082-951e-4694-b254-8985eb8a2a0a" />  Coming soon
 
 ## Base URL
 
